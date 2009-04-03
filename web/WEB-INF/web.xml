@@ -3,10 +3,14 @@
     <servlet>
         <servlet-name>Sparql</servlet-name>
         <servlet-class>Sparql</servlet-class>
-    </servlet>
+        <init-param>
+            <param-name>RepositoryDirectory</param-name>
+            <param-value>/data/sesame2</param-value>
+        </init-param>
+        </servlet>
     <servlet-mapping>
         <servlet-name>Sparql</servlet-name>
-        <url-pattern>/LIBRIS-AUTH</url-pattern>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>

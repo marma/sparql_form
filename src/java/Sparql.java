@@ -4,6 +4,7 @@
  */
 
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -23,6 +24,8 @@ import org.openrdf.query.resultio.text.BooleanTextWriter;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.http.HTTPRepository;
+import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.sail.nativerdf.NativeStore;
 
 /**
  *
@@ -41,11 +44,12 @@ public class Sparql extends HttpServlet {
     throws ServletException, IOException {
         String format = request.getParameter("format");
         String query = request.getParameter("query");
-        String sesameServer = "http://ratat3.libris.kb.se:8080/openrdf-sesame";
-        String repositoryID = request.getRequestURI().substring(request.getRequestURI().lastIndexOf("/"));
+        RepositoryConnection con = null;
+        Repository myRepository = null;
+        int max = (request.getParameter("max") != null && !request.getParameter("max").equals(""))? (Integer.parseInt(request.getParameter("max"))):100;
 
         try {
-            if (format == null || format.equals("html")) {
+            if ((format != null && format.equalsIgnoreCase("html")) || query == null) {
                 response.setContentType("text/html; charset=UTF-8");
                 PrintWriter out = response.getWriter();
 
@@ -69,13 +73,23 @@ public class Sparql extends HttpServlet {
 
                 out.println("</textarea>");
                 out.println("      <br/>");
+                out.println("      max: <select name=\"max\">");
+                out.println("        <option value=\"100\">100</option");
+                out.println("        <option value=\"500\">500</option");
+                out.println("        <option value=\"1000\">1000</option");
+                out.println("      </select><br/>");
+                out.println("      format: <select name=\"format\">");
+                out.println("        <option value=\"HTML\">HTML</option");
+                out.println("        <option value=\"XML\">XML</option");
+                out.println("      </select><br/>");
                 out.println("      <input type=\"submit\">");
                 out.println("    </form>");
 
                 if (query != null) {
-                    Repository myRepository = new HTTPRepository(sesameServer, repositoryID);
+                    File dataDir = new File(getServletConfig().getInitParameter("RepositoryDirectory"));
+                    myRepository = new SailRepository(new NativeStore(dataDir));
                     myRepository.initialize();
-                    RepositoryConnection con = myRepository.getConnection();
+                    con = myRepository.getConnection();
                     TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
                     TupleQueryResult result = tupleQuery.evaluate();
 
@@ -88,7 +102,8 @@ public class Sparql extends HttpServlet {
 
                     out.println("      </tr>");
 
-                    while (result.hasNext()) {
+                    int n=1;
+                    while (result.hasNext() && n++ < max) {
                         BindingSet bs = result.next();
 
                         out.println("      <tr>");
@@ -102,38 +117,30 @@ public class Sparql extends HttpServlet {
                     }
 
                     out.println("    </table>");
+
+                    con.close();
                 }
 
                 out.println("  </body>\n");
                 out.println("</html>\n");
-
-                out.close();
-            } else if (format.equalsIgnoreCase("xml")) {
+            } else {
                 response.setContentType("text/xml; charset=UTF-8");
                 OutputStream out = response.getOutputStream();
-                Repository myRepository = new HTTPRepository(sesameServer, repositoryID);
+                File dataDir = new File(getServletConfig().getInitParameter("RepositoryDirectory"));
+                myRepository = new SailRepository(new NativeStore(dataDir));
                 myRepository.initialize();
-                RepositoryConnection con = myRepository.getConnection();
+                con = myRepository.getConnection();
                 SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
 
                 TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
                 tupleQuery.evaluate(sparqlWriter);
                 out.close();
             }
-
-/*
-
-
-            SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
-
-            //String queryString = "SELECT * WHERE { ?s ?p 'Malmsten, Martin, 1974-' . }";
-            String queryString = request.getParameter("query");
-            TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, queryString);
-            tupleQuery.evaluate(sparqlWriter);
- */
         } catch (Throwable e) {
             throw new ServletException(e);
         } finally {
+            try { con.close(); } catch (Exception e) {}
+            try { myRepository.shutDown(); } catch (Exception e) {}
         }
     } 
 
