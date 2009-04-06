@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.text.Normalizer.Form;
 import java.util.Iterator;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -51,6 +52,7 @@ public class Sparql extends HttpServlet {
         try {
             if ((format != null && format.equalsIgnoreCase("html")) || query == null) {
                 response.setContentType("text/html; charset=UTF-8");
+                response.setCharacterEncoding("UTF-8");
                 PrintWriter out = response.getWriter();
 
                 out.println("<html>");
@@ -68,6 +70,7 @@ public class Sparql extends HttpServlet {
                     out.println("PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>");
                     out.println("PREFIX skos:<http://www.w3.org/2004/02/skos/core#>");
                 } else {
+                    query = java.text.Normalizer.normalize(query, Form.NFD);
                     out.println("\n" + query);
                 }
 
@@ -132,6 +135,7 @@ public class Sparql extends HttpServlet {
                 con = myRepository.getConnection();
                 SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
 
+                query = java.text.Normalizer.normalize(query, Form.NFD);
                 TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
                 tupleQuery.evaluate(sparqlWriter);
                 out.close();
