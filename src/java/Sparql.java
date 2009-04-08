@@ -131,10 +131,15 @@ public class Sparql extends HttpServlet {
 
                         out.println("      <tr>");
 
-                        Iterator<Binding> iter = bs.iterator();
+                        for (String name: result.getBindingNames()) {
+                            out.println("        <td>" + bs.getBinding(name).getValue() + "</td>");
+                        }
+
+
+                        /*Iterator<Binding> iter = bs.iterator();
                         while (iter.hasNext()) {
                             out.println("        <td>" + iter.next().getValue() + "</td>");
-                        }
+                        }*/
 
                         out.println("      </tr>");
                     }
@@ -152,7 +157,7 @@ public class Sparql extends HttpServlet {
                 con = repository.getConnection();
                 SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
 
-                query = java.text.Normalizer.normalize(query, Form.NFD);
+                query = java.text.Normalizer.normalize(query, Form.NFC);
                 TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
                 tupleQuery.evaluate(sparqlWriter);
                 out.close();
