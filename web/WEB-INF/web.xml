@@ -5,7 +5,7 @@
         <servlet-class>Sparql</servlet-class>
         <init-param>
             <param-name>RepositoryDirectory</param-name>
-            <param-value>/data/sesame2</param-value>
+            <param-value>/data/sesame-libris</param-value>
         </init-param>
         </servlet>
     <servlet-mapping>

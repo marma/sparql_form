@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.Normalizer.Form;
 import java.util.Iterator;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -33,7 +34,30 @@ import org.openrdf.sail.nativerdf.NativeStore;
  * @author marma
  */
 public class Sparql extends HttpServlet {
-   
+    static Repository repository = null;
+
+    @Override
+    public void init() throws ServletException {
+        try {
+            File dataDir = new File(getServletConfig().getInitParameter("RepositoryDirectory"));
+            repository = new SailRepository(new NativeStore(dataDir));
+            repository.initialize();
+        } catch (Exception e) {
+            throw new ServletException(e);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        try {
+            repository.shutDown();
+        } catch (Exception e) {
+            
+        }
+
+        super.destroy();
+    }
+
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * @param request servlet request
@@ -46,7 +70,6 @@ public class Sparql extends HttpServlet {
         String format = request.getParameter("format");
         String query = request.getParameter("query");
         RepositoryConnection con = null;
-        Repository myRepository = null;
         int max = (request.getParameter("max") != null && !request.getParameter("max").equals(""))? (Integer.parseInt(request.getParameter("max"))):100;
 
         try {
@@ -89,10 +112,7 @@ public class Sparql extends HttpServlet {
                 out.println("    </form>");
 
                 if (query != null) {
-                    File dataDir = new File(getServletConfig().getInitParameter("RepositoryDirectory"));
-                    myRepository = new SailRepository(new NativeStore(dataDir));
-                    myRepository.initialize();
-                    con = myRepository.getConnection();
+                    con = repository.getConnection();
                     TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
                     TupleQueryResult result = tupleQuery.evaluate();
 
@@ -129,10 +149,7 @@ public class Sparql extends HttpServlet {
             } else {
                 response.setContentType("text/xml; charset=UTF-8");
                 OutputStream out = response.getOutputStream();
-                File dataDir = new File(getServletConfig().getInitParameter("RepositoryDirectory"));
-                myRepository = new SailRepository(new NativeStore(dataDir));
-                myRepository.initialize();
-                con = myRepository.getConnection();
+                con = repository.getConnection();
                 SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
 
                 query = java.text.Normalizer.normalize(query, Form.NFD);
@@ -144,7 +161,6 @@ public class Sparql extends HttpServlet {
             throw new ServletException(e);
         } finally {
             try { con.close(); } catch (Exception e) {}
-            try { myRepository.shutDown(); } catch (Exception e) {}
         }
     } 
 
