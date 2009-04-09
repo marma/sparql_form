@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
 import java.text.Normalizer.Form;
 import java.util.Iterator;
 import javax.servlet.ServletConfig;
@@ -69,6 +70,16 @@ public class Sparql extends HttpServlet {
     throws ServletException, IOException {
         String format = request.getParameter("format");
         String query = request.getParameter("query");
+        String prefix = "PREFIX dc:<http://purl.org/dc/elements/1.1/>\n" +
+                        "PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#>\n" +
+                        "PREFIX foaf:<http://xmlns.com/foaf/0.1/>\n" +
+                        "PREFIX libris:<http://libris.kb.se/vocabulary/experimental#>\n" +
+                        "PREFIX dbpedia:<http://dbpedia.org/property/>\n" +
+                        "PREFIX owl:<http://www.w3.org/2002/07/owl#>\n" +
+                        "PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                        "PREFIX skos:<http://www.w3.org/2004/02/skos/core#>\n";
+
+
         RepositoryConnection con = null;
         int max = (request.getParameter("max") != null && !request.getParameter("max").equals(""))? (Integer.parseInt(request.getParameter("max"))):100;
 
@@ -84,14 +95,7 @@ public class Sparql extends HttpServlet {
                 out.print("      <textarea cols=\"80\" rows=\"20\" name=\"query\">");
 
                 if (query == null) {
-                    out.println("PREFIX dc:<http://purl.org/dc/elements/1.1/>");
-                    out.println("PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#>");
-                    out.println("PREFIX foaf:<http://xmlns.com/foaf/0.1/>");
-                    out.println("PREFIX libris:<http://libris.kb.se/vocabulary/experimental#>");
-                    out.println("PREFIX dbpedia:<http://dbpedia.org/property/>");
-                    out.println("PREFIX owl:<http://www.w3.org/2002/07/owl#>");
-                    out.println("PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>");
-                    out.println("PREFIX skos:<http://www.w3.org/2004/02/skos/core#>");
+                    out.println(prefix);
                 } else {
                     query = java.text.Normalizer.normalize(query, Form.NFD);
                     out.println("\n" + query);
@@ -132,7 +136,22 @@ public class Sparql extends HttpServlet {
                         out.println("      <tr>");
 
                         for (String name: result.getBindingNames()) {
-                            out.println("        <td>" + bs.getBinding(name).getValue() + "</td>");
+                            out.print("        <td>");
+
+                            if (bs.getBinding(name) != null) {
+                                String value = bs.getBinding(name).getValue().toString();
+
+                                if (value.startsWith("<")) {
+                                    String q = prefix + "select * where { " + value + " ?p ?o . }";
+                                    out.print("<a href=\"?query=" + URLEncoder.encode(q, "UTF-8") + "#\">" + value + "</a>");
+                                } else if (value.startsWith("\"")) {
+                                    out.print(value);
+                                } else {
+                                    out.print(value);
+                                }
+                            }
+
+                            out.println("        </td>");
                         }
 
 
