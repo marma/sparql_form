@@ -97,7 +97,7 @@ public class Sparql extends HttpServlet {
                 if (query == null) {
                     out.println(prefix);
                 } else {
-                    query = java.text.Normalizer.normalize(query, Form.NFD);
+                    query = java.text.Normalizer.normalize(query, Form.NFC);
                     out.println("\n" + query);
                 }
 
