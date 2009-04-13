@@ -117,6 +117,7 @@ public class Sparql extends HttpServlet {
 
                 if (query != null) {
                     con = repository.getConnection();
+                    query = java.text.Normalizer.normalize(query, Form.NFC);
                     TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
                     TupleQueryResult result = tupleQuery.evaluate();
 
