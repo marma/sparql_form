@@ -18,9 +18,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.GraphQuery;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.parser.ParsedBooleanQuery;
+import org.openrdf.query.parser.ParsedGraphQuery;
+import org.openrdf.query.parser.ParsedQuery;
+import org.openrdf.query.parser.ParsedTupleQuery;
+import org.openrdf.query.parser.QueryParser;
+import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriter;
 import org.openrdf.query.resultio.sparqljson.SPARQLResultsJSONWriter;
 import org.openrdf.query.resultio.text.BooleanTextWriter;
@@ -172,14 +179,26 @@ public class Sparql extends HttpServlet {
                 out.println("  </body>\n");
                 out.println("</html>\n");
             } else {
+                query = java.text.Normalizer.normalize(query, Form.NFC);
                 response.setContentType("text/xml; charset=UTF-8");
                 OutputStream out = response.getOutputStream();
-                con = repository.getConnection();
-                SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
 
-                query = java.text.Normalizer.normalize(query, Form.NFC);
-                TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
-                tupleQuery.evaluate(sparqlWriter);
+                QueryParser parser = new SPARQLParser();
+                ParsedQuery q = parser.parseQuery(query, null);
+
+                con = repository.getConnection();
+
+                if (q instanceof ParsedBooleanQuery) {
+                    BooleanQuery booleanQuery = con.prepareBooleanQuery
+                } else if (q instanceof ParsedGraphQuery) {
+                    GraphQuery graphQuery = con.prepareGraphQuery(QueryLanguage.SPARQL, query);
+                    graphQuery.evaluate();
+                } else if (q instanceof ParsedTupleQuery) {
+                    SPARQLResultsXMLWriter sparqlWriter = new SPARQLResultsXMLWriter(out);
+                    TupleQuery tupleQuery = con.prepareTupleQuery(QueryLanguage.SPARQL, query);
+                    tupleQuery.evaluate(sparqlWriter);
+                }
+
                 out.close();
             }
         } catch (Throwable e) {
