@@ -1,0 +1,28 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <body>
+    <form>
+      <textarea cols="80" rows="20" name="query"><!-- QUERY -->
+</textarea>
+      <br/>
+      <!--max: <select name="max">
+        <option value="100">100</option
+        <option value="500">500</option
+        <option value="1000">1000</option
+      </select><br/-->
+      format: <select name="format">
+        <option value="HTML">text/html (SELECT, DESCRIBE)</option
+        <option value="SPARQL">application/sparql-results+xml (SELECT)</option
+        <option value="RDFXML">application/rdf+xml (DESCRIBE)</option
+        <option value="N3">application/rdf+n3 (DESCRIBE)</option
+        <!--option value="TEXT">plain/text</option-->
+      </select><br/>
+      <input type="submit">
+    </form>
+    <!-- RESULT -->
+  </body>
+</html>

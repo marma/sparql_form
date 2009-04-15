@@ -189,7 +189,7 @@ public class Sparql extends HttpServlet {
                 con = repository.getConnection();
 
                 if (q instanceof ParsedBooleanQuery) {
-                    BooleanQuery booleanQuery = con.prepareBooleanQuery
+                    //BooleanQuery booleanQuery = con.prepareBooleanQuery
                 } else if (q instanceof ParsedGraphQuery) {
                     GraphQuery graphQuery = con.prepareGraphQuery(QueryLanguage.SPARQL, query);
                     graphQuery.evaluate();
